@@ -93,6 +93,7 @@ model Product {
   localPickup   Boolean              @default(true)
   pickupNotes   String?
   deliveryNotes String?
+  images        Json?
   saleOptions   Json?
   pricingTiers  Json?
   public        Boolean              @default(true)

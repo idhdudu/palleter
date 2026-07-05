@@ -1,12 +1,15 @@
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { DeliveryMode } from "@prisma/client";
 import type { Prisma, ProductCategory } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   categoryLabels,
+  extractImageUrls,
   deliveryModeLabels,
   formatDecimal,
   formatMoney,
+  getPrimaryImageUrl,
   summarizePricingTiers,
   summarizeSaleOptions,
 } from "@/lib/public-catalog";
@@ -291,12 +294,25 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
               products.map((product) => {
                 const saleOptions = summarizeSaleOptions(product.saleOptions);
                 const pricingTiers = summarizePricingTiers(product.pricingTiers);
+                const imageUrls = extractImageUrls(product.images);
+                const primaryImage = getPrimaryImageUrl(product.images);
 
                 return (
                   <article
                     key={product.id}
                     className="rounded-[1.5rem] border border-black/5 bg-white/75 p-5"
                   >
+                    {primaryImage ? (
+                      <div className="mb-4 overflow-hidden rounded-[1.25rem] border border-black/5 bg-[rgba(95,124,73,0.08)]">
+                        <img
+                          src={primaryImage}
+                          alt={product.title}
+                          className="h-56 w-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : null}
+
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
@@ -404,6 +420,20 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
                         Ver ficha
                       </Link>
                     </div>
+
+                    {imageUrls.length > 1 ? (
+                      <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+                        {imageUrls.slice(1, 4).map((imageUrl) => (
+                          <img
+                            key={imageUrl}
+                            src={imageUrl}
+                            alt={product.title}
+                            className="h-16 w-16 flex-none rounded-2xl border border-black/5 object-cover"
+                            loading="lazy"
+                          />
+                        ))}
+                      </div>
+                    ) : null}
                   </article>
                 );
               })

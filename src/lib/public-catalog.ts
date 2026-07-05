@@ -104,3 +104,14 @@ export function summarizePricingTiers(value: unknown) {
   });
 }
 
+export function extractImageUrls(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  return value.filter(
+    (entry): entry is string => typeof entry === "string" && entry.trim().length > 0,
+  );
+}
+
+export function getPrimaryImageUrl(value: unknown) {
+  return extractImageUrls(value)[0] ?? null;
+}

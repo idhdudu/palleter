@@ -1,11 +1,14 @@
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
   categoryLabels,
+  extractImageUrls,
   deliveryModeLabels,
   formatDecimal,
   formatMoney,
+  getPrimaryImageUrl,
   summarizePricingTiers,
   summarizeSaleOptions,
 } from "@/lib/public-catalog";
@@ -52,6 +55,8 @@ export default async function ProductPage({ params }: PageProps) {
 
   const saleOptions = summarizeSaleOptions(product.saleOptions);
   const pricingTiers = summarizePricingTiers(product.pricingTiers);
+  const imageUrls = extractImageUrls(product.images);
+  const primaryImage = getPrimaryImageUrl(product.images);
 
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-10 sm:px-10 lg:px-12">
@@ -81,6 +86,16 @@ export default async function ProductPage({ params }: PageProps) {
             {formatMoney(product.priceCents)}
           </div>
         </div>
+
+        {primaryImage ? (
+          <div className="mt-6 overflow-hidden rounded-[1.75rem] border border-black/5 bg-[rgba(95,124,73,0.08)]">
+            <img
+              src={primaryImage}
+              alt={product.title}
+              className="h-80 w-full object-cover"
+            />
+          </div>
+        ) : null}
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl bg-white/75 p-4">
@@ -223,6 +238,22 @@ export default async function ProductPage({ params }: PageProps) {
           </section>
         </div>
 
+        {imageUrls.length > 1 ? (
+          <section className="mt-6 rounded-[1.5rem] bg-white/75 p-5">
+            <h2 className="text-lg font-semibold">Galería</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {imageUrls.slice(1).map((imageUrl) => (
+                <img
+                  key={imageUrl}
+                  src={imageUrl}
+                  alt={product.title}
+                  className="h-40 w-full rounded-2xl object-cover"
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
         {product.availability.length ? (
           <section className="mt-6 rounded-[1.5rem] bg-white/75 p-5">
             <h2 className="text-lg font-semibold">Disponibilidad</h2>
@@ -240,4 +271,3 @@ export default async function ProductPage({ params }: PageProps) {
     </main>
   );
 }
-

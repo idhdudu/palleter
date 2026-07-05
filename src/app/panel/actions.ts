@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { Prisma, Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
+  parseImageUrlsText,
   parsePricingTiersText,
   parseSaleOptionsText,
   productFormSchema,
@@ -70,6 +71,14 @@ function resolvePricingTiers(text: string | null | undefined) {
   }
 }
 
+function resolveImages(text: string | null | undefined) {
+  try {
+    return parseImageUrlsText(text);
+  } catch (error) {
+    return error instanceof Error ? error : new Error("Formato de imagenes invalido");
+  }
+}
+
 export type ProductActionState = {
   error?: string;
 };
@@ -87,9 +96,13 @@ export async function createProductAction(
 
   const data = parsed.data;
   const deliveryFields = resolveDeliveryFields(data);
+  const images = resolveImages(data.imagesText);
   const saleOptions = resolveSaleOptions(data.saleOptionsText);
   const pricingTiers = resolvePricingTiers(data.pricingTiersText);
 
+  if (images instanceof Error) {
+    return { error: images.message };
+  }
   if (saleOptions instanceof Error) {
     return { error: saleOptions.message };
   }
@@ -113,6 +126,7 @@ export async function createProductAction(
       localPickup: data.localPickup,
       pickupNotes: data.pickupNotes || null,
       deliveryNotes: data.deliveryNotes || null,
+      images: images.length ? images : Prisma.DbNull,
       saleOptions: saleOptions.length ? saleOptions : Prisma.DbNull,
       pricingTiers: pricingTiers.length ? pricingTiers : Prisma.DbNull,
       public: data.public,
@@ -147,9 +161,13 @@ export async function updateProductAction(
 
   const data = parsed.data;
   const deliveryFields = resolveDeliveryFields(data);
+  const images = resolveImages(data.imagesText);
   const saleOptions = resolveSaleOptions(data.saleOptionsText);
   const pricingTiers = resolvePricingTiers(data.pricingTiersText);
 
+  if (images instanceof Error) {
+    return { error: images.message };
+  }
   if (saleOptions instanceof Error) {
     return { error: saleOptions.message };
   }
@@ -176,6 +194,7 @@ export async function updateProductAction(
         localPickup: data.localPickup,
         pickupNotes: data.pickupNotes || null,
         deliveryNotes: data.deliveryNotes || null,
+        images: images.length ? images : Prisma.DbNull,
         saleOptions: saleOptions.length ? saleOptions : Prisma.DbNull,
         pricingTiers: pricingTiers.length ? pricingTiers : Prisma.DbNull,
         public: data.public,

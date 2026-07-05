@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { DeliveryMode, ProductCategory, type Product } from "@prisma/client";
 import { updateProductAction, type ProductActionState } from "@/app/panel/actions";
 import {
+  formatImageUrlsText,
   formatPricingTiersText,
   formatSaleOptionsText,
 } from "@/lib/product-schema";
@@ -57,6 +58,17 @@ export function EditProductForm({ product }: { product: Product & { availability
           rows={4}
           defaultValue={product.description ?? ""}
           className={fieldClassName}
+        />
+      </label>
+
+      <label className="mt-4 block">
+        <span className="text-sm font-medium">Imagenes del producto</span>
+        <textarea
+          name="imagesText"
+          rows={4}
+          defaultValue={formatImageUrlsText(product.images)}
+          className={fieldClassName}
+          placeholder="https://.../imagen1.jpg&#10;https://.../imagen2.jpg"
         />
       </label>
 
@@ -199,25 +211,33 @@ export function EditProductForm({ product }: { product: Product & { availability
         </label>
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <label className="block">
-          <span className="text-sm font-medium">Disponible desde</span>
-          <input
-            name="availabilityStartsAt"
-            type="date"
-            defaultValue={availability ? availability.startsAt.toISOString().slice(0, 10) : ""}
-            className={fieldClassName}
-          />
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium">Disponible hasta</span>
-          <input
-            name="availabilityEndsAt"
-            type="date"
-            defaultValue={availability ? availability.endsAt.toISOString().slice(0, 10) : ""}
-            className={fieldClassName}
-          />
-        </label>
+      <div className="mt-4 rounded-[1.5rem] border border-black/5 bg-white/55 p-4">
+        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--muted)]">
+          Disponibilidad
+        </p>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          Indica el rango exacto de fechas en el que el producto se puede vender.
+        </p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-sm font-medium">Disponible desde</span>
+            <input
+              name="availabilityStartsAt"
+              type="date"
+              defaultValue={availability ? availability.startsAt.toISOString().slice(0, 10) : ""}
+              className={fieldClassName}
+            />
+          </label>
+          <label className="block">
+            <span className="text-sm font-medium">Disponible hasta</span>
+            <input
+              name="availabilityEndsAt"
+              type="date"
+              defaultValue={availability ? availability.endsAt.toISOString().slice(0, 10) : ""}
+              className={fieldClassName}
+            />
+          </label>
+        </div>
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">

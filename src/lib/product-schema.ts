@@ -46,6 +46,7 @@ export const productFormSchema = z.object({
   localPickup: z.coerce.boolean().default(true),
   pickupNotes: z.string().trim().max(1000).optional().or(z.literal("")),
   deliveryNotes: z.string().trim().max(1000).optional().or(z.literal("")),
+  imagesText: z.string().trim().max(8000).optional().or(z.literal("")),
   saleOptionsText: z.string().trim().max(4000).optional().or(z.literal("")),
   pricingTiersText: z.string().trim().max(4000).optional().or(z.literal("")),
   public: z.coerce.boolean().default(true),
@@ -105,6 +106,28 @@ export function parseSaleOptionsText(text: string | null | undefined) {
           : `${quantity} ${unit.toLowerCase()}`,
     };
   });
+}
+
+export function parseImageUrlsText(text: string | null | undefined) {
+  const source = text?.trim();
+  if (!source) return [];
+
+  return source
+    .split(/[\n,]/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((value, index) => {
+      try {
+        const url = new URL(value);
+        if (!["http:", "https:"].includes(url.protocol)) {
+          throw new Error();
+        }
+
+        return url.toString();
+      } catch {
+        throw new Error(`Linea ${index + 1}: usa URLs validas con http o https`);
+      }
+    });
 }
 
 export function parsePricingTiersText(text: string | null | undefined) {
@@ -200,6 +223,21 @@ export function formatPricingTiersText(value: unknown) {
           pricePerUnitCents: number;
         };
         return `${typed.minQuantity}|${typed.maxQuantity}|${typed.unit}|${typed.pricePerUnitCents}`;
+      }
+
+      return "";
+    })
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function formatImageUrlsText(value: unknown) {
+  if (!Array.isArray(value)) return "";
+
+  return value
+    .map((option) => {
+      if (typeof option === "string") {
+        return option.trim();
       }
 
       return "";

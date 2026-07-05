@@ -45,6 +45,16 @@ export function CreateProductForm() {
         <textarea name="description" rows={4} className={fieldClassName} />
       </label>
 
+      <label className="mt-4 block">
+        <span className="text-sm font-medium">Imagenes del producto</span>
+        <textarea
+          name="imagesText"
+          rows={4}
+          className={fieldClassName}
+          placeholder="https://.../imagen1.jpg&#10;https://.../imagen2.jpg"
+        />
+      </label>
+
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="text-sm font-medium">Categoria</span>
@@ -162,15 +172,23 @@ export function CreateProductForm() {
         />
       </label>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <label className="block">
-          <span className="text-sm font-medium">Disponible desde</span>
-          <input name="availabilityStartsAt" type="date" className={fieldClassName} />
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium">Disponible hasta</span>
-          <input name="availabilityEndsAt" type="date" className={fieldClassName} />
-        </label>
+      <div className="mt-4 rounded-[1.5rem] border border-black/5 bg-white/55 p-4">
+        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--muted)]">
+          Disponibilidad
+        </p>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          Indica el rango exacto de fechas en el que el producto se puede vender.
+        </p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-sm font-medium">Disponible desde</span>
+            <input name="availabilityStartsAt" type="date" className={fieldClassName} />
+          </label>
+          <label className="block">
+            <span className="text-sm font-medium">Disponible hasta</span>
+            <input name="availabilityEndsAt" type="date" className={fieldClassName} />
+          </label>
+        </div>
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
