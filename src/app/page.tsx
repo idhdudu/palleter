@@ -2,6 +2,8 @@ const publicCategories = [
   "Hortalizas",
   "Frutas",
   "Verduras",
+  "Aceites",
+  "Miel",
   "Producto de temporada",
 ];
 
@@ -74,6 +76,12 @@ export default function Home() {
             >
               Acceso agricultor
             </a>
+            <a
+              href="/auth/register"
+              className="rounded-full border border-[var(--panel-border)] bg-white/55 px-5 py-3 text-sm font-medium text-[var(--accent-strong)]"
+            >
+              Crear cuenta
+            </a>
             <span className="rounded-full border border-[var(--panel-border)] bg-white/55 px-5 py-3 text-sm font-medium text-[var(--muted)]">
               Panel privado listo para autenticacion
             </span>
@@ -136,6 +144,26 @@ export default function Home() {
               </div>
             </div>
           </aside>
+        </section>
+
+        <section className="mt-8 rounded-[1.75rem] border border-[var(--panel-border)] bg-[var(--panel)] p-6 shadow-[0_18px_50px_rgba(44,60,38,0.08)] backdrop-blur-lg">
+          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
+            Acceso privado
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <a
+              href="/panel"
+              className="rounded-full bg-[var(--accent-strong)] px-5 py-3 text-sm font-medium text-white transition hover:opacity-95"
+            >
+              Ir al panel
+            </a>
+            <a
+              href="/auth/signin"
+              className="rounded-full border border-[var(--panel-border)] bg-white/55 px-5 py-3 text-sm font-medium text-[var(--accent-strong)]"
+            >
+              Iniciar sesion
+            </a>
+          </div>
         </section>
       </main>
     </div>

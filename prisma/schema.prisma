@@ -16,6 +16,8 @@ enum ProductCategory {
   HORTALIZAS
   FRUTAS
   VERDURAS
+  ACEITES
+  MIEL
 }
 
 enum ContactMethod {

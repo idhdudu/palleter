@@ -1,0 +1,149 @@
+"use client";
+
+import { useActionState } from "react";
+import { ProductCategory } from "@prisma/client";
+import { createProductAction, type ProductActionState } from "./actions";
+
+const initialState: ProductActionState = {};
+
+export function CreateProductForm() {
+  const [state, formAction, pending] = useActionState(
+    createProductAction,
+    initialState,
+  );
+
+  const fieldClassName =
+    "mt-2 w-full rounded-2xl border border-black/10 bg-white/75 px-4 py-3 outline-none transition focus:border-[var(--accent)]";
+
+  return (
+    <form
+      action={formAction}
+      className="rounded-[1.5rem] border border-black/8 bg-white/65 p-5"
+    >
+      <h2 className="text-xl font-semibold">Nuevo producto</h2>
+      <p className="mt-1 text-sm text-[var(--muted)]">
+        Crea una ficha con categorias, precio, peso y disponibilidad.
+      </p>
+
+      <label className="mt-4 block">
+        <span className="text-sm font-medium">Titulo</span>
+        <input name="title" className={fieldClassName} required />
+      </label>
+
+      <label className="mt-4 block">
+        <span className="text-sm font-medium">Slug</span>
+        <input
+          name="slug"
+          className={fieldClassName}
+          placeholder="tomate-raf"
+          required
+        />
+      </label>
+
+      <label className="mt-4 block">
+        <span className="text-sm font-medium">Descripcion</span>
+        <textarea name="description" rows={4} className={fieldClassName} />
+      </label>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm font-medium">Categoria</span>
+          <select
+            name="category"
+            className={fieldClassName}
+            defaultValue={ProductCategory.HORTALIZAS}
+            required
+          >
+            <option value={ProductCategory.HORTALIZAS}>Hortalizas</option>
+            <option value={ProductCategory.FRUTAS}>Frutas</option>
+            <option value={ProductCategory.VERDURAS}>Verduras</option>
+            <option value={ProductCategory.ACEITES}>Aceites</option>
+            <option value={ProductCategory.MIEL}>Miel</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium">Zona</span>
+          <input name="zone" className={fieldClassName} required />
+        </label>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm font-medium">Peso minimo (kg)</span>
+          <input
+            name="minWeightKg"
+            type="number"
+            step="0.01"
+            min="0"
+            className={fieldClassName}
+            required
+          />
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium">Peso maximo (kg)</span>
+          <input
+            name="maxWeightKg"
+            type="number"
+            step="0.01"
+            min="0"
+            className={fieldClassName}
+            required
+          />
+        </label>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm font-medium">Precio (€)</span>
+          <input
+            name="priceCents"
+            type="number"
+            min="0"
+            className={fieldClassName}
+            required
+          />
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium">Envio (€)</span>
+          <input
+            name="shippingCents"
+            type="number"
+            min="0"
+            className={fieldClassName}
+            defaultValue={0}
+          />
+        </label>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm font-medium">Disponible desde</span>
+          <input name="availabilityStartsAt" type="date" className={fieldClassName} />
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium">Disponible hasta</span>
+          <input name="availabilityEndsAt" type="date" className={fieldClassName} />
+        </label>
+      </div>
+
+      <label className="mt-4 flex items-center gap-3 text-sm font-medium">
+        <input name="public" type="checkbox" defaultChecked className="h-4 w-4" />
+        Producto publico
+      </label>
+
+      {state.error ? (
+        <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {state.error}
+        </p>
+      ) : null}
+
+      <button
+        type="submit"
+        disabled={pending}
+        className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-[var(--accent-strong)] px-5 py-3 font-medium text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {pending ? "Guardando..." : "Crear producto"}
+      </button>
+    </form>
+  );
+}
