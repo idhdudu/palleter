@@ -1,4 +1,4 @@
-import { Role, ProductCategory } from "@prisma/client";
+import { DeliveryMode, Role, ProductCategory } from "@prisma/client";
 import { z } from "zod";
 
 const optionalDate = z
@@ -9,6 +9,19 @@ const optionalDate = z
   .refine((value) => value === null || !Number.isNaN(value.getTime()), {
     message: "Fecha invalida",
   });
+
+const deliveryTownsSchema = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) =>
+    value
+      ? value
+          .split(/[\n,]/)
+          .map((town) => town.trim())
+          .filter(Boolean)
+      : [],
+  );
 
 export const productFormSchema = z.object({
   title: z.string().trim().min(3).max(120),
@@ -25,6 +38,14 @@ export const productFormSchema = z.object({
   priceCents: z.coerce.number().int().nonnegative(),
   shippingCents: z.coerce.number().int().nonnegative().default(0),
   zone: z.string().trim().min(2).max(120),
+  deliveryMode: z.nativeEnum(DeliveryMode).default(DeliveryMode.NONE),
+  deliveryRadiusKm: z.coerce.number().int().positive().optional().or(z.literal("")),
+  deliveryTowns: deliveryTownsSchema,
+  deliveryAvailableFrom: optionalDate,
+  deliveryAvailableTo: optionalDate,
+  localPickup: z.coerce.boolean().default(true),
+  pickupNotes: z.string().trim().max(1000).optional().or(z.literal("")),
+  deliveryNotes: z.string().trim().max(1000).optional().or(z.literal("")),
   public: z.coerce.boolean().default(true),
   availabilityStartsAt: optionalDate,
   availabilityEndsAt: optionalDate,

@@ -20,6 +20,13 @@ enum ProductCategory {
   MIEL
 }
 
+enum DeliveryMode {
+  NONE
+  RADIUS
+  TOWNS
+  BOTH
+}
+
 enum ContactMethod {
   TELEFONO
   EMAIL
@@ -55,6 +62,14 @@ model Product {
   priceCents    Int
   shippingCents Int                  @default(0)
   zone          String
+  deliveryMode  DeliveryMode        @default(NONE)
+  deliveryRadiusKm Int?
+  deliveryTowns String[]             @default([])
+  deliveryAvailableFrom DateTime?
+  deliveryAvailableTo DateTime?
+  localPickup   Boolean              @default(true)
+  pickupNotes   String?
+  deliveryNotes String?
   public        Boolean              @default(true)
   ownerId       String
   owner         User                 @relation(fields: [ownerId], references: [id], onDelete: Cascade)

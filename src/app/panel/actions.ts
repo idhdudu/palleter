@@ -24,6 +24,32 @@ async function ensureEditableProduct(productId: string, userId: string, role: Ro
   return product;
 }
 
+function normalizeOptionalNumber(value: number | string | null | undefined) {
+  if (value === "" || value === null || value === undefined) return null;
+  return typeof value === "number" ? value : Number(value);
+}
+
+function resolveDeliveryFields(data: {
+  deliveryMode: string;
+  deliveryRadiusKm?: number | string | null | undefined;
+  deliveryTowns: string[];
+  deliveryAvailableFrom: Date | null;
+  deliveryAvailableTo: Date | null;
+}) {
+  const deliveryRadiusKm = normalizeOptionalNumber(data.deliveryRadiusKm);
+  const wantsRadius =
+    data.deliveryMode === "RADIUS" || data.deliveryMode === "BOTH";
+  const wantsTowns =
+    data.deliveryMode === "TOWNS" || data.deliveryMode === "BOTH";
+
+  return {
+    deliveryRadiusKm: wantsRadius ? deliveryRadiusKm : null,
+    deliveryTowns: wantsTowns ? data.deliveryTowns : [],
+    deliveryAvailableFrom: data.deliveryMode === "NONE" ? null : data.deliveryAvailableFrom,
+    deliveryAvailableTo: data.deliveryMode === "NONE" ? null : data.deliveryAvailableTo,
+  };
+}
+
 export type ProductActionState = {
   error?: string;
 };
@@ -40,6 +66,7 @@ export async function createProductAction(
   }
 
   const data = parsed.data;
+  const deliveryFields = resolveDeliveryFields(data);
 
   await prisma.product.create({
     data: {
@@ -52,6 +79,11 @@ export async function createProductAction(
       priceCents: data.priceCents,
       shippingCents: data.shippingCents,
       zone: data.zone,
+      deliveryMode: data.deliveryMode,
+      ...deliveryFields,
+      localPickup: data.localPickup,
+      pickupNotes: data.pickupNotes || null,
+      deliveryNotes: data.deliveryNotes || null,
       public: data.public,
       ownerId: session.user.id,
       availability: data.availabilityStartsAt && data.availabilityEndsAt
@@ -83,6 +115,7 @@ export async function updateProductAction(
   }
 
   const data = parsed.data;
+  const deliveryFields = resolveDeliveryFields(data);
 
   await prisma.$transaction(async (tx) => {
     await tx.productAvailability.deleteMany({ where: { productId } });
@@ -98,6 +131,11 @@ export async function updateProductAction(
         priceCents: data.priceCents,
         shippingCents: data.shippingCents,
         zone: data.zone,
+        deliveryMode: data.deliveryMode,
+        ...deliveryFields,
+        localPickup: data.localPickup,
+        pickupNotes: data.pickupNotes || null,
+        deliveryNotes: data.deliveryNotes || null,
         public: data.public,
         availability:
           data.availabilityStartsAt && data.availabilityEndsAt

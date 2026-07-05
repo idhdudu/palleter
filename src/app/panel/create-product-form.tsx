@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { ProductCategory } from "@prisma/client";
+import { DeliveryMode, ProductCategory } from "@prisma/client";
 import { createProductAction, type ProductActionState } from "./actions";
 
 const initialState: ProductActionState = {};
@@ -69,6 +69,33 @@ export function CreateProductForm() {
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="block">
+          <span className="text-sm font-medium">Modo de reparto</span>
+          <select
+            name="deliveryMode"
+            defaultValue={DeliveryMode.NONE}
+            className={fieldClassName}
+          >
+            <option value={DeliveryMode.NONE}>Sin reparto</option>
+            <option value={DeliveryMode.RADIUS}>Por radio</option>
+            <option value={DeliveryMode.TOWNS}>Por poblaciones</option>
+            <option value={DeliveryMode.BOTH}>Radio y poblaciones</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium">Radio de reparto (km)</span>
+          <input
+            name="deliveryRadiusKm"
+            type="number"
+            min="1"
+            step="1"
+            className={fieldClassName}
+            placeholder="Ej. 25"
+          />
+        </label>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <label className="block">
           <span className="text-sm font-medium">Peso minimo (kg)</span>
           <input
             name="minWeightKg"
@@ -126,9 +153,64 @@ export function CreateProductForm() {
         </label>
       </div>
 
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm font-medium">Inicio reparto</span>
+          <input
+            name="deliveryAvailableFrom"
+            type="date"
+            className={fieldClassName}
+          />
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium">Fin reparto</span>
+          <input
+            name="deliveryAvailableTo"
+            type="date"
+            className={fieldClassName}
+          />
+        </label>
+      </div>
+
+      <label className="mt-4 block">
+        <span className="text-sm font-medium">Poblaciones de reparto</span>
+        <textarea
+          name="deliveryTowns"
+          rows={3}
+          className={fieldClassName}
+          placeholder="Ej. Alzira, Xativa, Gandia"
+        />
+      </label>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm font-medium">Notas de reparto</span>
+          <textarea
+            name="deliveryNotes"
+            rows={3}
+            className={fieldClassName}
+            placeholder="Horario, condiciones, costes..."
+          />
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium">Notas recogida local</span>
+          <textarea
+            name="pickupNotes"
+            rows={3}
+            className={fieldClassName}
+            placeholder="Direccion, horarios, punto de entrega..."
+          />
+        </label>
+      </div>
+
       <label className="mt-4 flex items-center gap-3 text-sm font-medium">
         <input name="public" type="checkbox" defaultChecked className="h-4 w-4" />
         Producto publico
+      </label>
+
+      <label className="mt-4 flex items-center gap-3 text-sm font-medium">
+        <input name="localPickup" type="checkbox" defaultChecked className="h-4 w-4" />
+        Permite recogida local
       </label>
 
       {state.error ? (

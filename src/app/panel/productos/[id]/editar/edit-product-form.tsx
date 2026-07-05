@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { ProductCategory, type Product } from "@prisma/client";
+import { DeliveryMode, ProductCategory, type Product } from "@prisma/client";
 import { updateProductAction, type ProductActionState } from "@/app/panel/actions";
 
 const initialState: ProductActionState = {};
@@ -84,6 +84,45 @@ export function EditProductForm({ product }: { product: Product & { availability
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="block">
+          <span className="text-sm font-medium">Modo de reparto</span>
+          <select
+            name="deliveryMode"
+            defaultValue={product.deliveryMode}
+            className={fieldClassName}
+          >
+            <option value={DeliveryMode.NONE}>Sin reparto</option>
+            <option value={DeliveryMode.RADIUS}>Por radio</option>
+            <option value={DeliveryMode.TOWNS}>Por poblaciones</option>
+            <option value={DeliveryMode.BOTH}>Radio y poblaciones</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium">Radio de reparto (km)</span>
+          <input
+            name="deliveryRadiusKm"
+            type="number"
+            min="1"
+            step="1"
+            defaultValue={product.deliveryRadiusKm ?? ""}
+            className={fieldClassName}
+            placeholder="Ej. 25"
+          />
+        </label>
+      </div>
+
+      <label className="mt-4 block">
+        <span className="text-sm font-medium">Poblaciones de reparto</span>
+        <textarea
+          name="deliveryTowns"
+          rows={3}
+          defaultValue={product.deliveryTowns.join(", ")}
+          className={fieldClassName}
+          placeholder="Ej. Alzira, Xativa, Gandia"
+        />
+      </label>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <label className="block">
           <span className="text-sm font-medium">Peso minimo (kg)</span>
           <input
             name="minWeightKg"
@@ -155,6 +194,56 @@ export function EditProductForm({ product }: { product: Product & { availability
         </label>
       </div>
 
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm font-medium">Inicio reparto</span>
+          <input
+            name="deliveryAvailableFrom"
+            type="date"
+            defaultValue={
+              product.deliveryAvailableFrom
+                ? product.deliveryAvailableFrom.toISOString().slice(0, 10)
+                : ""
+            }
+            className={fieldClassName}
+          />
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium">Fin reparto</span>
+          <input
+            name="deliveryAvailableTo"
+            type="date"
+            defaultValue={
+              product.deliveryAvailableTo
+                ? product.deliveryAvailableTo.toISOString().slice(0, 10)
+                : ""
+            }
+            className={fieldClassName}
+          />
+        </label>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm font-medium">Notas de reparto</span>
+          <textarea
+            name="deliveryNotes"
+            rows={3}
+            defaultValue={product.deliveryNotes ?? ""}
+            className={fieldClassName}
+          />
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium">Notas recogida local</span>
+          <textarea
+            name="pickupNotes"
+            rows={3}
+            defaultValue={product.pickupNotes ?? ""}
+            className={fieldClassName}
+          />
+        </label>
+      </div>
+
       <label className="mt-4 flex items-center gap-3 text-sm font-medium">
         <input
           name="public"
@@ -163,6 +252,16 @@ export function EditProductForm({ product }: { product: Product & { availability
           className="h-4 w-4"
         />
         Producto publico
+      </label>
+
+      <label className="mt-4 flex items-center gap-3 text-sm font-medium">
+        <input
+          name="localPickup"
+          type="checkbox"
+          defaultChecked={product.localPickup}
+          className="h-4 w-4"
+        />
+        Permite recogida local
       </label>
 
       {state.error ? (

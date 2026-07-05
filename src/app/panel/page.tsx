@@ -93,6 +93,62 @@ export default async function PanelPage() {
                     </div>
                   </dl>
 
+                  <div className="mt-4 rounded-2xl bg-white/70 p-4 text-sm">
+                    <p className="font-medium text-[var(--foreground)]">Reparto y recogida</p>
+                    <div className="mt-2 grid gap-2 text-[var(--muted)] sm:grid-cols-2">
+                      <p>
+                        Modo:{" "}
+                        <span className="font-medium text-[var(--foreground)]">
+                          {product.deliveryMode === "NONE"
+                            ? "Sin reparto"
+                            : product.deliveryMode === "RADIUS"
+                              ? "Por radio"
+                              : product.deliveryMode === "TOWNS"
+                                ? "Por poblaciones"
+                                : "Radio y poblaciones"}
+                        </span>
+                      </p>
+                      <p>
+                        Recogida local:{" "}
+                        <span className="font-medium text-[var(--foreground)]">
+                          {product.localPickup ? "Si" : "No"}
+                        </span>
+                      </p>
+                      <p>
+                        Radio:{" "}
+                        <span className="font-medium text-[var(--foreground)]">
+                          {product.deliveryRadiusKm ? `${product.deliveryRadiusKm} km` : "No definido"}
+                        </span>
+                      </p>
+                      <p>
+                        Poblaciones:{" "}
+                        <span className="font-medium text-[var(--foreground)]">
+                          {product.deliveryTowns.length
+                            ? product.deliveryTowns.join(", ")
+                            : "No definidas"}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="mt-2 grid gap-2 text-[var(--muted)] sm:grid-cols-2">
+                      <p>
+                        Inicio reparto:{" "}
+                        <span className="font-medium text-[var(--foreground)]">
+                          {product.deliveryAvailableFrom
+                            ? product.deliveryAvailableFrom.toLocaleDateString("es-ES")
+                            : "No definido"}
+                        </span>
+                      </p>
+                      <p>
+                        Fin reparto:{" "}
+                        <span className="font-medium text-[var(--foreground)]">
+                          {product.deliveryAvailableTo
+                            ? product.deliveryAvailableTo.toLocaleDateString("es-ES")
+                            : "No definido"}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="mt-4 text-sm text-[var(--muted)]">
                     Disponibilidad:
                     {product.availability.length ? (
