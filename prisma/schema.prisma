@@ -27,6 +27,20 @@ enum DeliveryMode {
   BOTH
 }
 
+enum OrderDeliveryType {
+  PICKUP
+  DELIVERY
+}
+
+enum OrderStatus {
+  PENDING
+  READY
+  PICKED_UP
+  SHIPPED
+  COMPLETED
+  CANCELLED
+}
+
 enum ContactMethod {
   TELEFONO
   EMAIL
@@ -48,6 +62,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   products      Product[]
+  orders        Order[]
   auditLogs     AuditLog[] @relation("AuditActor")
 }
 
@@ -75,6 +90,7 @@ model Product {
   owner         User                 @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   availability  ProductAvailability[]
   contacts      ProductContact[]
+  orders        Order[]
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 
@@ -103,6 +119,31 @@ model ProductContact {
   createdAt DateTime      @default(now())
 
   @@index([productId, method])
+}
+
+model Order {
+  id             String            @id @default(cuid())
+  reference      String            @unique
+  ownerId        String
+  owner          User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customerName   String
+  customerEmail  String?
+  customerPhone  String?
+  quantity       Int               @default(1)
+  deliveryType   OrderDeliveryType @default(PICKUP)
+  status         OrderStatus       @default(PENDING)
+  pickupAt       DateTime?
+  deliveryTown   String?
+  deliveryAddress String?
+  customerNotes  String?
+  internalNotes  String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([ownerId, status, createdAt])
+  @@index([productId, status])
 }
 
 model AuditLog {

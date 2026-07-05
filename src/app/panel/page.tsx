@@ -15,6 +15,10 @@ export default async function PanelPage() {
     },
     orderBy: { createdAt: "desc" },
   });
+  const orders = await prisma.order.findMany({
+    where: isAdmin ? {} : { ownerId: session.user.id },
+    select: { id: true, status: true, deliveryType: true },
+  });
 
   return (
     <main className="mx-auto w-full max-w-7xl px-6 py-10 sm:px-10 lg:px-12">
@@ -35,6 +39,12 @@ export default async function PanelPage() {
           <div className="rounded-full border border-[var(--panel-border)] bg-white/60 px-4 py-2 text-sm font-medium text-[var(--accent-strong)]">
             {products.length} productos
           </div>
+          <Link
+            href="/panel/pedidos"
+            className="rounded-full border border-[var(--panel-border)] bg-white/60 px-4 py-2 text-sm font-medium text-[var(--accent-strong)]"
+          >
+            {orders.length} pedidos
+          </Link>
         </div>
 
         <div className="mt-8 grid gap-6 xl:grid-cols-[1fr_1.3fr]">
