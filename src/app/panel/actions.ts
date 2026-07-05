@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma, Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { productFormSchema } from "@/lib/product-schema";
+import {
+  parsePricingTiersText,
+  parseSaleOptionsText,
+  productFormSchema,
+} from "@/lib/product-schema";
 import { requireFarmerOrAdmin } from "@/lib/authorization";
 
 async function ensureEditableProduct(productId: string, userId: string, role: Role) {
@@ -50,6 +54,22 @@ function resolveDeliveryFields(data: {
   };
 }
 
+function resolveSaleOptions(text: string | null | undefined) {
+  try {
+    return parseSaleOptionsText(text);
+  } catch (error) {
+    return error instanceof Error ? error : new Error("Formato de medidas invalido");
+  }
+}
+
+function resolvePricingTiers(text: string | null | undefined) {
+  try {
+    return parsePricingTiersText(text);
+  } catch (error) {
+    return error instanceof Error ? error : new Error("Formato de tramos invalido");
+  }
+}
+
 export type ProductActionState = {
   error?: string;
 };
@@ -67,6 +87,15 @@ export async function createProductAction(
 
   const data = parsed.data;
   const deliveryFields = resolveDeliveryFields(data);
+  const saleOptions = resolveSaleOptions(data.saleOptionsText);
+  const pricingTiers = resolvePricingTiers(data.pricingTiersText);
+
+  if (saleOptions instanceof Error) {
+    return { error: saleOptions.message };
+  }
+  if (pricingTiers instanceof Error) {
+    return { error: pricingTiers.message };
+  }
 
   await prisma.product.create({
     data: {
@@ -84,6 +113,8 @@ export async function createProductAction(
       localPickup: data.localPickup,
       pickupNotes: data.pickupNotes || null,
       deliveryNotes: data.deliveryNotes || null,
+      saleOptions: saleOptions.length ? saleOptions : Prisma.DbNull,
+      pricingTiers: pricingTiers.length ? pricingTiers : Prisma.DbNull,
       public: data.public,
       ownerId: session.user.id,
       availability: data.availabilityStartsAt && data.availabilityEndsAt
@@ -116,6 +147,15 @@ export async function updateProductAction(
 
   const data = parsed.data;
   const deliveryFields = resolveDeliveryFields(data);
+  const saleOptions = resolveSaleOptions(data.saleOptionsText);
+  const pricingTiers = resolvePricingTiers(data.pricingTiersText);
+
+  if (saleOptions instanceof Error) {
+    return { error: saleOptions.message };
+  }
+  if (pricingTiers instanceof Error) {
+    return { error: pricingTiers.message };
+  }
 
   await prisma.$transaction(async (tx) => {
     await tx.productAvailability.deleteMany({ where: { productId } });
@@ -136,6 +176,8 @@ export async function updateProductAction(
         localPickup: data.localPickup,
         pickupNotes: data.pickupNotes || null,
         deliveryNotes: data.deliveryNotes || null,
+        saleOptions: saleOptions.length ? saleOptions : Prisma.DbNull,
+        pricingTiers: pricingTiers.length ? pricingTiers : Prisma.DbNull,
         public: data.public,
         availability:
           data.availabilityStartsAt && data.availabilityEndsAt

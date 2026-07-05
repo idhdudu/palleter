@@ -142,6 +142,26 @@ export function CreateProductForm() {
         </label>
       </div>
 
+      <label className="mt-4 block">
+        <span className="text-sm font-medium">Medidas / formatos de venta</span>
+        <textarea
+          name="saleOptionsText"
+          rows={4}
+          className={fieldClassName}
+          placeholder="1|KG|350&#10;2|KG|650&#10;1|L|450"
+        />
+      </label>
+
+      <label className="mt-4 block">
+        <span className="text-sm font-medium">Tramos de precio por cantidad</span>
+        <textarea
+          name="pricingTiersText"
+          rows={4}
+          className={fieldClassName}
+          placeholder="1|5|KG|200&#10;5|10|KG|150&#10;1|5|L|220"
+        />
+      </label>
+
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="text-sm font-medium">Disponible desde</span>

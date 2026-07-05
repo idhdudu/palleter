@@ -159,6 +159,80 @@ export default async function PanelPage() {
                     </div>
                   </div>
 
+                  <div className="mt-4 rounded-2xl bg-white/70 p-4 text-sm">
+                    <p className="font-medium text-[var(--foreground)]">Medidas y precios</p>
+                    <div className="mt-2 grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className="text-[var(--muted)]">Formatos de venta</p>
+                        {Array.isArray(product.saleOptions) && product.saleOptions.length ? (
+                          <ul className="mt-2 grid gap-2">
+                            {product.saleOptions.map((option) => {
+                              if (
+                                typeof option === "object" &&
+                                option !== null &&
+                                "label" in option &&
+                                "priceCents" in option
+                              ) {
+                                const typed = option as {
+                                  label: string;
+                                  priceCents: number;
+                                };
+                                return (
+                                  <li
+                                    key={`${typed.label}-${typed.priceCents}`}
+                                    className="rounded-2xl bg-white/80 px-3 py-2 text-[var(--foreground)]"
+                                  >
+                                    {typed.label} - {(typed.priceCents / 100).toFixed(2)} €
+                                  </li>
+                                );
+                              }
+
+                              return null;
+                            })}
+                          </ul>
+                        ) : (
+                          <p className="mt-2 text-[var(--foreground)]">Sin formatos definidos</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-[var(--muted)]">Tramos de precio</p>
+                        {Array.isArray(product.pricingTiers) && product.pricingTiers.length ? (
+                          <ul className="mt-2 grid gap-2">
+                            {product.pricingTiers.map((tier) => {
+                              if (
+                                typeof tier === "object" &&
+                                tier !== null &&
+                                "minQuantity" in tier &&
+                                "maxQuantity" in tier &&
+                                "unit" in tier &&
+                                "pricePerUnitCents" in tier
+                              ) {
+                                const typed = tier as {
+                                  minQuantity: number;
+                                  maxQuantity: number;
+                                  unit: string;
+                                  pricePerUnitCents: number;
+                                };
+                                return (
+                                  <li
+                                    key={`${typed.minQuantity}-${typed.maxQuantity}-${typed.unit}-${typed.pricePerUnitCents}`}
+                                    className="rounded-2xl bg-white/80 px-3 py-2 text-[var(--foreground)]"
+                                  >
+                                    {typed.minQuantity}-{typed.maxQuantity} {typed.unit.toLowerCase()} · {(typed.pricePerUnitCents / 100).toFixed(2)} € / unidad
+                                  </li>
+                                );
+                              }
+
+                              return null;
+                            })}
+                          </ul>
+                        ) : (
+                          <p className="mt-2 text-[var(--foreground)]">Sin tramos definidos</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="mt-4 text-sm text-[var(--muted)]">
                     Disponibilidad:
                     {product.availability.length ? (

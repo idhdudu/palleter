@@ -3,6 +3,10 @@
 import { useActionState } from "react";
 import { DeliveryMode, ProductCategory, type Product } from "@prisma/client";
 import { updateProductAction, type ProductActionState } from "@/app/panel/actions";
+import {
+  formatPricingTiersText,
+  formatSaleOptionsText,
+} from "@/lib/product-schema";
 
 const initialState: ProductActionState = {};
 
@@ -118,6 +122,28 @@ export function EditProductForm({ product }: { product: Product & { availability
           defaultValue={product.deliveryTowns.join(", ")}
           className={fieldClassName}
           placeholder="Ej. Alzira, Xativa, Gandia"
+        />
+      </label>
+
+      <label className="mt-4 block">
+        <span className="text-sm font-medium">Medidas / formatos de venta</span>
+        <textarea
+          name="saleOptionsText"
+          rows={4}
+          defaultValue={formatSaleOptionsText(product.saleOptions)}
+          className={fieldClassName}
+          placeholder="1|KG|350&#10;2|KG|650&#10;1|L|450"
+        />
+      </label>
+
+      <label className="mt-4 block">
+        <span className="text-sm font-medium">Tramos de precio por cantidad</span>
+        <textarea
+          name="pricingTiersText"
+          rows={4}
+          defaultValue={formatPricingTiersText(product.pricingTiers)}
+          className={fieldClassName}
+          placeholder="1|5|KG|200&#10;5|10|KG|150&#10;1|5|L|220"
         />
       </label>
 

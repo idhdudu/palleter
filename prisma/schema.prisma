@@ -27,6 +27,14 @@ enum DeliveryMode {
   BOTH
 }
 
+enum ProductMeasureUnit {
+  KG
+  G
+  L
+  ML
+  UNIT
+}
+
 enum OrderDeliveryType {
   PICKUP
   DELIVERY
@@ -85,6 +93,8 @@ model Product {
   localPickup   Boolean              @default(true)
   pickupNotes   String?
   deliveryNotes String?
+  saleOptions   Json?
+  pricingTiers  Json?
   public        Boolean              @default(true)
   ownerId       String
   owner         User                 @relation(fields: [ownerId], references: [id], onDelete: Cascade)
