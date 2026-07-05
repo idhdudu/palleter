@@ -10,6 +10,7 @@ import {
   parseSaleOptionsText,
   productFormSchema,
 } from "@/lib/product-schema";
+import { uploadImageFilesFromFormData } from "@/lib/storage";
 import { requireFarmerOrAdmin } from "@/lib/authorization";
 
 async function ensureEditableProduct(productId: string, userId: string, role: Role) {
@@ -71,12 +72,31 @@ function resolvePricingTiers(text: string | null | undefined) {
   }
 }
 
-function resolveImages(text: string | null | undefined) {
+function resolveImageUrls(text: string | null | undefined) {
   try {
     return parseImageUrlsText(text);
   } catch (error) {
     return error instanceof Error ? error : new Error("Formato de imagenes invalido");
   }
+}
+
+async function resolveProductImages(
+  formData: FormData,
+  text: string | null | undefined,
+  existingImages: unknown = [],
+) {
+  const parsedImages = resolveImageUrls(text);
+  if (parsedImages instanceof Error) {
+    return parsedImages;
+  }
+
+  const uploadedImages = await uploadImageFilesFromFormData(formData, "imagesFiles");
+  const images = [...uploadedImages, ...parsedImages];
+  if (images.length) return images;
+
+  if (Array.isArray(existingImages)) return existingImages;
+
+  return [];
 }
 
 export type ProductActionState = {
@@ -96,7 +116,7 @@ export async function createProductAction(
 
   const data = parsed.data;
   const deliveryFields = resolveDeliveryFields(data);
-  const images = resolveImages(data.imagesText);
+  const images = await resolveProductImages(formData, data.imagesText);
   const saleOptions = resolveSaleOptions(data.saleOptionsText);
   const pricingTiers = resolvePricingTiers(data.pricingTiersText);
 
@@ -161,7 +181,15 @@ export async function updateProductAction(
 
   const data = parsed.data;
   const deliveryFields = resolveDeliveryFields(data);
-  const images = resolveImages(data.imagesText);
+  const existingProduct = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { images: true },
+  });
+  const images = await resolveProductImages(
+    formData,
+    data.imagesText,
+    existingProduct?.images,
+  );
   const saleOptions = resolveSaleOptions(data.saleOptionsText);
   const pricingTiers = resolvePricingTiers(data.pricingTiersText);
 

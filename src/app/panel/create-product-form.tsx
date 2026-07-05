@@ -18,6 +18,7 @@ export function CreateProductForm() {
   return (
     <form
       action={formAction}
+      encType="multipart/form-data"
       className="rounded-[1.5rem] border border-black/8 bg-white/65 p-5"
     >
       <h2 className="text-xl font-semibold">Nuevo producto</h2>
@@ -47,6 +48,16 @@ export function CreateProductForm() {
 
       <label className="mt-4 block">
         <span className="text-sm font-medium">Imagenes del producto</span>
+        <input
+          name="imagesFiles"
+          type="file"
+          accept="image/*"
+          multiple
+          className={fieldClassName}
+        />
+        <p className="mt-2 text-xs text-[var(--muted)]">
+          Sube una o varias imágenes. También puedes pegar URLs debajo.
+        </p>
         <textarea
           name="imagesText"
           rows={4}

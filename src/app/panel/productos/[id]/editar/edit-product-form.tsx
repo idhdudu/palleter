@@ -24,6 +24,7 @@ export function EditProductForm({ product }: { product: Product & { availability
   return (
     <form
       action={formAction}
+      encType="multipart/form-data"
       className="rounded-[2rem] border border-[var(--panel-border)] bg-[var(--panel)] p-8 shadow-[0_18px_50px_rgba(44,60,38,0.08)] backdrop-blur-lg"
     >
       <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[var(--muted)]">
@@ -63,6 +64,17 @@ export function EditProductForm({ product }: { product: Product & { availability
 
       <label className="mt-4 block">
         <span className="text-sm font-medium">Imagenes del producto</span>
+        <input
+          name="imagesFiles"
+          type="file"
+          accept="image/*"
+          multiple
+          className={fieldClassName}
+        />
+        <p className="mt-2 text-xs text-[var(--muted)]">
+          Si lo dejas vacío, se conservan las imágenes actuales. Si subes
+          archivos o pegas URLs, sustituyes la galería.
+        </p>
         <textarea
           name="imagesText"
           rows={4}
