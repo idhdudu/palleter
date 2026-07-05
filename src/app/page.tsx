@@ -66,6 +66,18 @@ export default function Home() {
               </span>
             ))}
           </div>
+
+          <div className="flex flex-wrap gap-3 pt-2">
+            <a
+              href="/auth/signin"
+              className="rounded-full bg-[var(--accent-strong)] px-5 py-3 text-sm font-medium text-white transition hover:opacity-95"
+            >
+              Acceso agricultor
+            </a>
+            <span className="rounded-full border border-[var(--panel-border)] bg-white/55 px-5 py-3 text-sm font-medium text-[var(--muted)]">
+              Panel privado listo para autenticacion
+            </span>
+          </div>
         </header>
 
         <section className="mt-8 grid gap-5 lg:grid-cols-3">

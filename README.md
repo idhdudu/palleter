@@ -2,6 +2,8 @@
 
 Palleter es la base de una plataforma agricola con Next.js, TypeScript, PostgreSQL y Prisma.
 
+Licencia: GPL-3.0-only.
+
 ## Stack
 
 - Next.js App Router

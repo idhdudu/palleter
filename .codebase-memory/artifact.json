@@ -1,11 +1,11 @@
 {
     "schema_version": 1,
-    "commit": "4121c1cf73d64b86cee829ee69ecf1675e881708",
-    "indexed_at": "2026-07-05T13:26:14Z",
+    "commit": "1c7a2d8c33121b56db7fd683fd4470213a10b025",
+    "indexed_at": "2026-07-05T14:00:26Z",
     "project": "home-overburn-source-next-palleter",
-    "nodes": 49,
-    "edges": 56,
-    "original_size": 1179648,
-    "compressed_size": 21351,
-    "compression_level": 9
+    "nodes": 91,
+    "edges": 91,
+    "original_size": 1900544,
+    "compressed_size": 62040,
+    "compression_level": 3
 }
