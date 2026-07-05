@@ -1,4 +1,29 @@
-const publicCategories = [
+import Link from "next/link";
+import { DeliveryMode } from "@prisma/client";
+import type { Prisma, ProductCategory } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import {
+  categoryLabels,
+  deliveryModeLabels,
+  formatDecimal,
+  formatMoney,
+  summarizePricingTiers,
+  summarizeSaleOptions,
+} from "@/lib/public-catalog";
+
+export const dynamic = "force-dynamic";
+
+type SearchParams = Promise<{
+  q?: string;
+  category?: string;
+  zone?: string;
+  pickup?: string;
+  delivery?: string;
+  minPrice?: string;
+  maxPrice?: string;
+}>;
+
+const categoryCards = [
   {
     name: "Hortalizas",
     description: "Tomate, pimiento, cebolla, calabacín y producto de huerta.",
@@ -25,73 +50,97 @@ const publicCategories = [
   },
 ];
 
-const featuredProducts = [
-  {
-    title: "Aceite de oliva virgen extra",
-    farmer: "Finca La Sierra",
-    zone: "Jaén y alrededores",
-    price: "Desde 8,50 € / L",
-    priceNote: "Garrafas de 1, 2 y 5 litros",
-    badges: ["Recogida local", "Envío por zona", "Producto premium"],
-  },
-  {
-    title: "Miel de flor de azahar",
-    farmer: "Colmenas del Valle",
-    zone: "Valencia y comarcas cercanas",
-    price: "Desde 6,00 € / tarro",
-    priceNote: "Tarros de 250 g, 500 g y 1 kg",
-    badges: ["Venta por unidad", "Recogida", "Entrega por pueblos"],
-  },
-  {
-    title: "Tomate de temporada",
-    farmer: "Huerta Solar",
-    zone: "Murcia norte",
-    price: "2,00 € / kg",
-    priceNote: "Tramos de precio por volumen",
-    badges: ["Por kilos", "Precio escalado", "Fresco semanal"],
-  },
-];
-
-const pricingExamples = [
-  {
-    title: "Formato fijo",
-    description: "Ideal para 1 kg, 2 kg, 3 kg, 1 L o 2 L.",
-    example: "1|KG|350",
-  },
-  {
-    title: "Precio por tramo",
-    description: "Perfecto para bajar el precio cuando el pedido crece.",
-    example: "1|5|KG|200",
-  },
-  {
-    title: "Entrega flexible",
-    description: "Recogida local, reparto por km o por poblaciones.",
-    example: "Zona + fechas de reparto",
-  },
-];
-
 const quickFilters = [
-  "Hoy disponible",
-  "Peso mínimo",
-  "Peso máximo",
-  "Precio bajo",
-  "Recogida local",
-  "Envío cercano",
+  { label: "Hoy disponible", href: "?delivery=1" },
+  { label: "Recogida local", href: "?pickup=1" },
+  { label: "Precio bajo", href: "?maxPrice=10" },
+  { label: "Ver todo", href: "/" },
 ];
 
-const benefits = [
-  "SEO fuerte para Google y fichas claras por producto.",
-  "Filtros por fecha, peso, precio, zona y tipo de reparto.",
-  "Panel agricultor simple con gestión de pedidos y contacto.",
-  "Base preparada para crecer hacia búsqueda avanzada.",
-];
+function parsePriceValue(value?: string) {
+  if (!value) return null;
+  const normalized = value.replace(",", ".");
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return Math.round(parsed * 100);
+}
 
-export default function Home() {
+function buildWhere(searchParams: {
+  q?: string;
+  category?: string;
+  zone?: string;
+  pickup?: string;
+  delivery?: string;
+  minPrice?: string;
+  maxPrice?: string;
+}): Prisma.ProductWhereInput {
+  const where: Prisma.ProductWhereInput = {
+    public: true,
+  };
+
+  const q = searchParams.q?.trim();
+  const category = searchParams.category?.trim();
+  const zone = searchParams.zone?.trim();
+  const wantsPickup = searchParams.pickup === "1";
+  const wantsDelivery = searchParams.delivery === "1";
+  const minPrice = parsePriceValue(searchParams.minPrice);
+  const maxPrice = parsePriceValue(searchParams.maxPrice);
+
+  if (q) {
+    where.OR = [
+      { title: { contains: q, mode: "insensitive" } },
+      { description: { contains: q, mode: "insensitive" } },
+      { zone: { contains: q, mode: "insensitive" } },
+      { slug: { contains: q, mode: "insensitive" } },
+    ];
+  }
+
+  if (category && Object.keys(categoryLabels).includes(category)) {
+    where.category = category as ProductCategory;
+  }
+
+  if (zone) {
+    where.zone = { contains: zone, mode: "insensitive" };
+  }
+
+  if (wantsPickup) {
+    where.localPickup = true;
+  }
+
+  if (wantsDelivery) {
+    where.deliveryMode = { not: DeliveryMode.NONE };
+  }
+
+  if (minPrice !== null || maxPrice !== null) {
+    where.priceCents = {
+      ...(minPrice !== null ? { gte: minPrice } : {}),
+      ...(maxPrice !== null ? { lte: maxPrice } : {}),
+    };
+  }
+
+  return where;
+}
+
+export default async function Home({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams;
+  const where = buildWhere(params);
+  const [products, totalProducts] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      include: {
+        owner: { select: { name: true } },
+        availability: { orderBy: { startsAt: "asc" } },
+      },
+      orderBy: [{ createdAt: "desc" }],
+    }),
+    prisma.product.count({ where: { public: true } }),
+  ]);
+
   return (
     <div className="min-h-screen text-[var(--foreground)]">
       <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-8 sm:px-10 lg:px-12">
         <header className="overflow-hidden rounded-[2rem] border border-[var(--panel-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.82),rgba(245,236,220,0.58))] shadow-[0_28px_90px_rgba(44,60,38,0.12)] backdrop-blur-xl">
-          <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="p-6 sm:p-8 lg:p-10">
               <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[var(--muted)]">
                 Palleter
@@ -101,34 +150,35 @@ export default function Home() {
                 proximidad y con reparto claro.
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--muted)] sm:text-lg">
-                Fichas SEO, categorías claras, filtros por peso, precio y zona,
-                y una base pensada para que agricultores publiquen producto sin
-                fricción.
+                Fichas SEO, filtros por peso, precio y zona, reparto por
+                proximidad y una base pensada para que agricultores publiquen
+                producto sin fricción.
               </p>
 
               <div className="mt-7 flex flex-wrap gap-3">
                 <a
-                  href="/auth/register"
+                  href="#catalogo"
                   className="rounded-full bg-[var(--accent-strong)] px-5 py-3 text-sm font-medium text-white transition hover:opacity-95"
                 >
-                  Crear cuenta agricultor
+                  Ver catálogo
                 </a>
                 <a
-                  href="/panel"
+                  href="/auth/register"
                   className="rounded-full border border-[var(--panel-border)] bg-white/70 px-5 py-3 text-sm font-medium text-[var(--accent-strong)]"
                 >
-                  Entrar al panel
+                  Crear cuenta agricultor
                 </a>
               </div>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                {quickFilters.map((item) => (
-                  <span
-                    key={item}
+                {quickFilters.map((filter) => (
+                  <a
+                    key={filter.label}
+                    href={filter.href}
                     className="rounded-full border border-[var(--panel-border)] bg-white/70 px-4 py-2 text-sm font-medium text-[var(--accent-strong)]"
                   >
-                    {item}
-                  </span>
+                    {filter.label}
+                  </a>
                 ))}
               </div>
             </div>
@@ -136,45 +186,75 @@ export default function Home() {
             <aside className="border-t border-[var(--panel-border)] bg-[linear-gradient(180deg,rgba(53,84,43,0.08),rgba(255,255,255,0.52))] p-6 sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
               <div className="rounded-[1.5rem] border border-white/50 bg-white/70 p-5 shadow-[0_12px_35px_rgba(44,60,38,0.10)]">
                 <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-                  Busca pública
+                  Buscar
                 </p>
-                <div className="mt-4 grid gap-3">
-                  <div className="rounded-2xl border border-black/5 bg-white px-4 py-3 text-sm text-[var(--muted)]">
-                    Producto, agricultor o población
+                <form className="mt-4 grid gap-3" method="get">
+                  <input
+                    name="q"
+                    defaultValue={params.q}
+                    placeholder="Producto, agricultor o población"
+                    className="rounded-2xl border border-black/5 bg-white px-4 py-3 text-sm outline-none focus:border-[var(--accent)]"
+                  />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <input
+                      name="zone"
+                      defaultValue={params.zone}
+                      placeholder="Zona"
+                      className="rounded-2xl border border-black/5 bg-white px-4 py-3 text-sm outline-none focus:border-[var(--accent)]"
+                    />
+                    <select
+                      name="category"
+                      defaultValue={params.category ?? ""}
+                      className="rounded-2xl border border-black/5 bg-white px-4 py-3 text-sm outline-none focus:border-[var(--accent)]"
+                    >
+                      <option value="">Todas las categorías</option>
+                      {Object.entries(categoryLabels).map(([key, label]) => (
+                        <option key={key} value={key}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <div className="rounded-2xl border border-black/5 bg-white px-4 py-3 text-sm text-[var(--muted)]">
-                    Peso, precio y disponibilidad
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <input
+                      name="minPrice"
+                      defaultValue={params.minPrice}
+                      placeholder="Precio mínimo (€)"
+                      className="rounded-2xl border border-black/5 bg-white px-4 py-3 text-sm outline-none focus:border-[var(--accent)]"
+                    />
+                    <input
+                      name="maxPrice"
+                      defaultValue={params.maxPrice}
+                      placeholder="Precio máximo (€)"
+                      className="rounded-2xl border border-black/5 bg-white px-4 py-3 text-sm outline-none focus:border-[var(--accent)]"
+                    />
                   </div>
-                  <div className="rounded-2xl border border-black/5 bg-white px-4 py-3 text-sm text-[var(--muted)]">
-                    Recogida local o envío por zona
+                  <div className="flex flex-wrap gap-3 text-sm">
+                    <label className="inline-flex items-center gap-2 rounded-full border border-black/5 bg-white px-4 py-2">
+                      <input type="checkbox" name="pickup" value="1" defaultChecked={params.pickup === "1"} />
+                      Recogida
+                    </label>
+                    <label className="inline-flex items-center gap-2 rounded-full border border-black/5 bg-white px-4 py-2">
+                      <input
+                        type="checkbox"
+                        name="delivery"
+                        value="1"
+                        defaultChecked={params.delivery === "1"}
+                      />
+                      Envío
+                    </label>
                   </div>
-                </div>
-              </div>
-
-              <div className="mt-5 grid gap-4">
-                <div className="rounded-[1.5rem] border border-white/55 bg-white/65 p-5">
-                  <p className="text-sm text-[var(--muted)]">
-                    Reparto por proximidad
-                  </p>
-                  <p className="mt-1 text-lg font-semibold">
-                    Km, poblaciones y fechas concretas
-                  </p>
-                </div>
-                <div className="rounded-[1.5rem] border border-white/55 bg-white/65 p-5">
-                  <p className="text-sm text-[var(--muted)]">
-                    Medidas flexibles
-                  </p>
-                  <p className="mt-1 text-lg font-semibold">
-                    Kilos, litros, unidades y tramos
-                  </p>
-                </div>
+                  <button className="rounded-full bg-[var(--accent-strong)] px-5 py-3 text-sm font-medium text-white">
+                    Aplicar filtros
+                  </button>
+                </form>
               </div>
             </aside>
           </div>
         </header>
 
         <section className="mt-8 grid gap-5 lg:grid-cols-3">
-          {publicCategories.map((category) => (
+          {categoryCards.map((category) => (
             <article
               key={category.name}
               className="rounded-[1.75rem] border border-[var(--panel-border)] bg-[var(--panel)] p-6 shadow-[0_18px_50px_rgba(44,60,38,0.08)] backdrop-blur-lg transition hover:-translate-y-0.5 hover:shadow-[0_22px_70px_rgba(44,60,38,0.12)]"
@@ -187,98 +267,155 @@ export default function Home() {
           ))}
         </section>
 
-        <section className="mt-8 grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-          <article className="rounded-[1.75rem] border border-[var(--panel-border)] bg-[var(--panel)] p-6 shadow-[0_18px_50px_rgba(44,60,38,0.08)] backdrop-blur-lg">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-                  Productos destacados
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold">
-                  Una vitrina pensada para vender bien
-                </h2>
-              </div>
-              <span className="rounded-full border border-[var(--panel-border)] bg-white/65 px-4 py-2 text-sm font-medium text-[var(--accent-strong)]">
-                SEO + conversión
-              </span>
-            </div>
-
-            <div className="mt-6 grid gap-4">
-              {featuredProducts.map((product) => (
-                <article
-                  key={product.title}
-                  className="rounded-[1.5rem] border border-black/5 bg-white/70 p-5"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg font-semibold">{product.title}</h3>
-                      <p className="mt-1 text-sm text-[var(--muted)]">
-                        {product.farmer} · {product.zone}
-                      </p>
-                    </div>
-                    <div className="rounded-full bg-[rgba(95,124,73,0.12)] px-4 py-2 text-sm font-semibold text-[var(--accent-strong)]">
-                      {product.price}
-                    </div>
-                  </div>
-
-                  <p className="mt-4 text-sm leading-6 text-[var(--foreground)]">
-                    {product.priceNote}
-                  </p>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {product.badges.map((badge) => (
-                      <span
-                        key={badge}
-                        className="rounded-full border border-[var(--panel-border)] bg-white px-3 py-1 text-xs font-medium text-[var(--accent-strong)]"
-                      >
-                        {badge}
-                      </span>
-                    ))}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </article>
-
-          <aside className="grid gap-5">
-            <article className="rounded-[1.75rem] border border-[var(--panel-border)] bg-[linear-gradient(160deg,rgba(95,124,73,0.18),rgba(255,255,255,0.46))] p-6 shadow-[0_18px_50px_rgba(44,60,38,0.08)] backdrop-blur-lg">
+        <section id="catalogo" className="mt-8 rounded-[1.75rem] border border-[var(--panel-border)] bg-[var(--panel)] p-6 shadow-[0_18px_50px_rgba(44,60,38,0.08)] backdrop-blur-lg">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
               <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-                Medidas y precios
+                Catálogo público
               </p>
-              <div className="mt-5 grid gap-4">
-                {pricingExamples.map((item) => (
-                  <div key={item.title} className="rounded-2xl bg-white/75 p-4">
-                    <p className="text-base font-semibold">{item.title}</p>
-                    <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
-                      {item.description}
-                    </p>
-                    <div className="mt-3 rounded-xl bg-[rgba(54,84,43,0.08)] px-3 py-2 font-mono text-sm text-[var(--accent-strong)]">
-                      {item.example}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </article>
+              <h2 className="mt-2 text-2xl font-semibold">
+                {products.length} resultados de {totalProducts} productos
+                publicados
+              </h2>
+            </div>
+            <a
+              href="/panel"
+              className="rounded-full border border-[var(--panel-border)] bg-white/65 px-4 py-2 text-sm font-medium text-[var(--accent-strong)]"
+            >
+              Publicar producto
+            </a>
+          </div>
 
-            <article className="rounded-[1.75rem] border border-[var(--panel-border)] bg-[var(--panel)] p-6 shadow-[0_18px_50px_rgba(44,60,38,0.08)] backdrop-blur-lg">
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-                Qué resuelve
-              </p>
-              <ul className="mt-5 grid gap-3">
-                {benefits.map((item) => (
-                  <li
-                    key={item}
-                    className="rounded-2xl border border-black/5 bg-white/65 px-4 py-3 text-sm leading-6"
+          <div className="mt-6 grid gap-4">
+            {products.length ? (
+              products.map((product) => {
+                const saleOptions = summarizeSaleOptions(product.saleOptions);
+                const pricingTiers = summarizePricingTiers(product.pricingTiers);
+
+                return (
+                  <article
+                    key={product.id}
+                    className="rounded-[1.5rem] border border-black/5 bg-white/75 p-5"
                   >
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </article>
-          </aside>
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-[rgba(95,124,73,0.12)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent-strong)]">
+                            {categoryLabels[product.category]}
+                          </span>
+                          <span className="text-xs text-[var(--muted)]">
+                            {product.zone}
+                          </span>
+                        </div>
+                        <h3 className="mt-3 text-xl font-semibold">
+                          <Link href={`/producto/${product.slug}`}>{product.title}</Link>
+                        </h3>
+                        <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted)]">
+                          {product.description ||
+                            "Producto local publicado con información de peso, precio y reparto."}
+                        </p>
+                      </div>
+
+                      <div className="rounded-full bg-[rgba(53,84,43,0.10)] px-4 py-2 text-sm font-semibold text-[var(--accent-strong)]">
+                        {formatMoney(product.priceCents)}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      <div className="rounded-2xl bg-white px-4 py-3">
+                        <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
+                          Peso
+                        </p>
+                        <p className="mt-1 text-sm font-medium">
+                          {formatDecimal(product.minWeightKg)} -{" "}
+                          {formatDecimal(product.maxWeightKg)} kg
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-white px-4 py-3">
+                        <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
+                          Envio
+                        </p>
+                        <p className="mt-1 text-sm font-medium">
+                          {formatMoney(product.shippingCents)}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-white px-4 py-3">
+                        <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
+                          Reparto
+                        </p>
+                        <p className="mt-1 text-sm font-medium">
+                          {deliveryModeLabels[product.deliveryMode]}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-white px-4 py-3">
+                        <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
+                          Recogida
+                        </p>
+                        <p className="mt-1 text-sm font-medium">
+                          {product.localPickup ? "Disponible" : "No disponible"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                      <div className="rounded-2xl bg-white px-4 py-3">
+                        <p className="text-sm font-semibold">Formatos de venta</p>
+                        {saleOptions.length ? (
+                          <ul className="mt-2 grid gap-2 text-sm text-[var(--muted)]">
+                            {saleOptions.slice(0, 3).map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-2 text-sm text-[var(--muted)]">
+                            Sin formatos definidos
+                          </p>
+                        )}
+                      </div>
+                      <div className="rounded-2xl bg-white px-4 py-3">
+                        <p className="text-sm font-semibold">Tramos de precio</p>
+                        {pricingTiers.length ? (
+                          <ul className="mt-2 grid gap-2 text-sm text-[var(--muted)]">
+                            {pricingTiers.slice(0, 3).map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-2 text-sm text-[var(--muted)]">
+                            Sin tramos definidos
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-sm text-[var(--muted)]">
+                        {product.owner.name
+                          ? `Publicado por ${product.owner.name}`
+                          : "Publicado por agricultor"}
+                        {product.availability.length
+                          ? ` · ${product.availability.length} ventanas de disponibilidad`
+                          : ""}
+                      </p>
+                      <Link
+                        href={`/producto/${product.slug}`}
+                        className="rounded-full border border-[var(--panel-border)] bg-[rgba(95,124,73,0.06)] px-4 py-2 text-sm font-medium text-[var(--accent-strong)]"
+                      >
+                        Ver ficha
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <div className="rounded-[1.5rem] border border-dashed border-black/10 bg-white/55 p-6 text-sm text-[var(--muted)]">
+                No hay productos que coincidan con estos filtros.
+              </div>
+            )}
+          </div>
         </section>
 
-        <section className="mt-8 grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+        <section className="mt-8 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
           <article className="rounded-[1.75rem] border border-[var(--panel-border)] bg-[var(--panel)] p-6 shadow-[0_18px_50px_rgba(44,60,38,0.08)] backdrop-blur-lg">
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
               Reparto y recogida
