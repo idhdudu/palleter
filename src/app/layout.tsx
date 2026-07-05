@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Palleter",
-  description: "Portal agricola para descubrir, publicar y gestionar producto local.",
+  title: "Palleter | Mercado agrícola local",
+  description:
+    "Portal agrícola de proximidad para descubrir producto local, con fichas SEO, reparto por zona y panel para agricultores.",
 };
 
 export default function RootLayout({
