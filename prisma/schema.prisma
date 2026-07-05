@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  AGRICULTOR
+  ADMIN
+  CONSUMIDOR
+}
+
+enum ProductCategory {
+  HORTALIZAS
+  FRUTAS
+  VERDURAS
+}
+
+enum ContactMethod {
+  TELEFONO
+  EMAIL
+  WHATSAPP
+  OTRO
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String?
+  email        String     @unique
+  passwordHash String?
+  role         Role       @default(CONSUMIDOR)
+  phone        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  products     Product[]
+  auditLogs    AuditLog[] @relation("AuditActor")
+}
+
+model Product {
+  id            String               @id @default(cuid())
+  slug          String               @unique
+  title         String
+  description   String?
+  category      ProductCategory
+  minWeightKg   Decimal              @db.Decimal(10, 2)
+  maxWeightKg   Decimal              @db.Decimal(10, 2)
+  priceCents    Int
+  shippingCents Int                  @default(0)
+  zone          String
+  public        Boolean              @default(true)
+  ownerId       String
+  owner         User                 @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  availability  ProductAvailability[]
+  contacts      ProductContact[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([category, public])
+  @@index([zone])
+}
+
+model ProductAvailability {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  startsAt  DateTime
+  endsAt    DateTime
+  createdAt DateTime @default(now())
+
+  @@index([productId, startsAt, endsAt])
+}
+
+model ProductContact {
+  id        String        @id @default(cuid())
+  productId String
+  product   Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  method    ContactMethod
+  label     String
+  value     String
+  createdAt DateTime      @default(now())
+
+  @@index([productId, method])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([actorId, createdAt])
+}
